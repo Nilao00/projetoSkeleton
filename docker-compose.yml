@@ -1,0 +1,75 @@
+version: "3"
+
+networks:
+  php-skeleton-networks:
+    external:
+      name: php-skeleton-networks
+
+services:
+  php-skeleton:
+    build:
+      args:
+        user: skeleton
+        uid: 1000
+      context: .
+      dockerfile: ./Dockerfile
+    depends_on:
+      - skeleton-db
+
+    environment:
+      DB_PORT: 3306
+      DB_HOST: skeleton-db
+      DB_CONNECTION: mysql
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    container_name: php-skeleton
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+    networks:
+      - php-skeleton-networks
+
+  skeleton-nginx:
+    image: nginx:1.17-alpine
+    container_name: nginx-skeleton
+    restart: unless-stopped
+    ports:
+      - 300:80
+    volumes:
+      - .:/var/www/html
+      - ./nginx/sites:/etc/nginx/conf.d
+    networks:
+      - php-skeleton-networks
+
+  skeleton-db:
+    container_name: db-skeleton
+    image: mysql:8
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - skeleton:/var/lib/mysql
+    networks:
+      - php-skeleton-networks
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    links:
+      - skeleton-db
+    ports:
+      - "8090:80"
+    environment:
+      PMA_HOST:  db-skeleton
+      MYSQL_ROOT_PASSWORD: skeleton
+    restart: always
+    networks:
+      - php-skeleton-networks
+
+volumes:
+  skeleton:
