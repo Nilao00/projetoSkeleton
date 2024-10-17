@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Company;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -13,7 +14,7 @@ class AdressRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+       return Company::where('company_id', $this->company_id)->exists();
     }
 
     /**
@@ -24,6 +25,7 @@ class AdressRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'company_id' => 'required|uuid',
             'street' => 'required|string|max:180',
             'number' => 'required|integer',
             'complement' => 'nullable|string|max:200',
